@@ -57,36 +57,38 @@ def find_primes(max_num, max_test, required=-1):
 # Меняет местами значения в массиве
 # (просто чтобы несколько раз вручную не прописывать)
 
-def replace(s,i,j):
-    x = s[i]
-    s[i] = s[j]
-    s[j] = x
+def replace(s, i, j):
+	x = s[i]
+	s[i] = s[j]
+	s[j] = x
+
 
 # Генерация массива чисел
 # от 0 до 255 с перестановкой
 # в key передается изначальный ключ (массивом)
 
 def s_gen(key, key_size):
-    s=[]
-    j=0
-    s = [i for i in range(0, 256)]
-    for i in range(0,255):
-        j=(j+s[i]+key[i % key_size])%256
-        replace(s,i,j)
-    return s
+	s = []
+	j = 0
+	s = [i for i in range(0, 256)]
+	for i in range(0, 255):
+		j = (j + s[i] + key[i % key_size]) % 256
+		replace(s, i, j)
+	return s
+
 
 # Генерация ключа
 # Сначала нужно сгенерировать массив чисел
 
 def keygen(s):
-    i=0
-    j=0
-    x=0
-    new_key=''
-    while len(new_key)<256:
-        i = (i + 1) % 256
-        j = (j + s[i]) % 256
-        replace(s,i,j)
-        temp = (s[i] + s[j]) % 256
-        new_key += str(temp)
-    return int(new_key)
+	i = 0
+	j = 0
+	x = 0
+	new_key = ''
+	while len(new_key) < 256:
+		i = (i + 1) % 256
+		j = (j + s[i]) % 256
+		replace(s, i, j)
+		temp = (s[i] + s[j]) % 256
+		new_key += str(temp)
+	return int(new_key)
