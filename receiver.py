@@ -12,7 +12,8 @@ def main():
 		client_connection, client_address = sock.accept()
 		print("Connected client: " + str(client_address))
 		client_data = client_connection.recv(conn.NBYTES)
-		print("Received data:\n" + client_data.decode())
+		print("Received data:\n")
+		print(client_data)
 		client_connection.close()
 		
 	sock.close()
