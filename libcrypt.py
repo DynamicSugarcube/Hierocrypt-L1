@@ -58,9 +58,7 @@ def find_primes(max_num, max_test, required=-1):
 # (просто чтобы несколько раз вручную не прописывать)
 
 def replace(s, i, j):
-	x = s[i]
-	s[i] = s[j]
-	s[j] = x
+	s[i], s[j] = s[j], s[i]
 
 
 # Генерация массива чисел
@@ -91,5 +89,5 @@ def keygen(s):
 		j = (j + s[i]) % 256
 		replace(s, i, j)
 		temp = (s[i] + s[j]) % 256
-		new_key += str(temp)
+		new_key += str(s[temp])
 	return int(new_key)
