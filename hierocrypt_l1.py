@@ -210,7 +210,7 @@ def decrypt(data, keys):
 		for r in range(5):
 			blocks[i] = hcryptL1_xs(blocks[i], keys[r], ISBOX, MDS_INV)
 			blocks[i] = hcryptL1_mdsh(blocks[i], MDSH_INV)
-		blocks[i] = hcryptL1_xs(blocks[i], keys[-1], SBOX, MDS)
+		blocks[i] = hcryptL1_xs(blocks[i], keys[-1], ISBOX, MDS)
 
 	out = []
 	for i in range(len(blocks)):
