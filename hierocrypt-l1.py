@@ -75,13 +75,13 @@ def break_key_into_blocks(key, block_size):
 
     nbytes = KEY_SIZE // block_size
 
-    blocks_arr = []
+    blocks = []
     for n in range(nbytes):
-        blocks_arr.append(get_block(key))
+        blocks.append(get_block(key))
         key = rshift(key)
 
-    blocks_arr.reverse()
-    return blocks_arr
+    blocks.reverse()
+    return blocks
 
 
 def break_data_into_blocks(data):
@@ -96,7 +96,7 @@ def break_data_into_blocks(data):
 
     blocks = []
     for n in range(0, data_len, 8):
-        blocks.append(key[n:n + 8])
+        blocks.append(data[n:n + 8])
 
     return blocks
 
@@ -115,7 +115,7 @@ def hcryptL1_xs(data):
 
     # Генерация ключа
     key = random.getrandbits(KEY_SIZE)
-    key_bytes = break_into_bytes(key)
+    key_bytes = break_key_into_blocks(key, 8)
     l_key_bytes = key_bytes[:8]
     r_key_bytes = key_bytes[8:]
 
@@ -179,7 +179,7 @@ def hcryptL1_mdsh(data):
 
 
 def encrypt(data):
-    blocks = break_into_blocks(data)
+    blocks = break_data_into_blocks(data)
     for i in range(len(blocks)):
         for r in range(5):
             hcryptL1_xs(blocks[i])
