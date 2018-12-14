@@ -63,14 +63,17 @@ def poly32_deg(a):
     return n
 
 
-def poly32_mul(a, b):
-    c = 0
-    while b != 0:
+def gmul(a, b):
+    p = 0
+    while a & b:
         if b & 1:
-            c ^= a
+            p ^= a
+        if a & 0x80:
+            a = (a << 1) ^ 0x11b
+        else:
+            a <<= 1
         b >>= 1
-        a <<= 1
-    return c
+    return p
 
 
 def poly32_mod(a, b):
@@ -132,7 +135,7 @@ def hcryptL1_xs(data, key, replacement_set, mul_matrix):
         for i in range(4):
             m = 0
             for j in range(4):
-                m ^= poly32_mod(poly32_mul(mul_matrix[i][j], data[j]), primitiveGF8)
+                m ^= poly32_mod(gmul(mul_matrix[i][j], data[j]), primitiveGF8)
             out.append(m)
         return out
 
@@ -214,7 +217,7 @@ def encrypt(data, keys):
     return out
 
 
-def key_expansion(key):
+def key_expansion(key, replacement_set):
     z = []
     h = [0x5A827999,
          0x6ED9EBA1,
@@ -233,6 +236,7 @@ def key_expansion(key):
           [0, 1, 0, 1],
           [0, 1, 1, 1],
           [1, 0, 1, 1]]
+    # Первый шаг
     ki = break_key_into_blocks(key, 32)
     x = [break_key_into_blocks(ki[i], 8) for i in range(4)]
     z[1] = ki[2]
@@ -240,6 +244,12 @@ def key_expansion(key):
     for i in range(4):
         z[3][i] ^= h[0]
     z[4] = lbcr.galoisMul(mb, x[4])
+    ki[2] ^= z[3]
+    f = break_key_into_blocks(ki[2], 8)
+    for i in range(4):
+        f[i] = replacement_set[f[i]]
+    f = lbcr.galoisMul(m8, f)
+    z[2] = ki[1] ^ f
 
 
 def decrypt(data, keys):
