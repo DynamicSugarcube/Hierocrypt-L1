@@ -1,4 +1,5 @@
 import random
+import libcrypt as lbcr
 
 SBOX = (0x07, 0xFC, 0x55, 0x70, 0x98, 0x8E, 0x84, 0x4E, 0xBC, 0x75, 0xCE, 0x18, 0x02, 0xE9, 0x5D, 0x80,
         0x1C, 0x60, 0x78, 0x42, 0x9D, 0x2E, 0xF5, 0xE8, 0xC6, 0x7A, 0x2F, 0xA4, 0xB2, 0x5F, 0x19, 0x87,
@@ -190,3 +191,30 @@ def encrypt(data):
     for i in range(len(blocks)):
         out += blocks[i]
     return out
+
+def key_expansion(key):
+    z=[]
+    h = [0x5A827999,
+         0x6ED9EBA1,
+         0x8F1BBCDC,
+         0xCA62C1D6,
+         0xF7DEF58A]
+    m5 = [[1, 0, 1, 0],
+          [1, 1, 0, 1],
+          [1, 1, 1, 0],
+          [0, 1, 0, 1]]
+    mb = [[0, 1, 0, 1],
+          [1, 0, 1, 0],
+          [1, 1, 0, 1],
+          [1, 0, 1, 1]]
+    m8 = [[1, 0, 1, 0],
+          [0, 1, 0, 1],
+          [0, 1, 1, 1],
+          [1, 0, 1, 1]]
+    ki = break_key_into_blocks(key, 32)
+    x = [break_key_into_blocks(ki[i], 8) for i in range(4)]
+    z[1] = ki[2]
+    z[3] = lbcr.galoisMul(m5, x[1])
+    for i in range(4):
+        z[3][i] ^= h[0]
+    z[4] = lbcr.galoisMul(mb, x[4])

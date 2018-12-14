@@ -75,6 +75,7 @@ def replace(s, i, j):
 def s_gen(key, key_size):
     s = []
     j = 0
+
     s = [i for i in range(0, 256)]
     for i in range(0, 255):
         j = (j + s[i] + key[i % key_size]) % 256
@@ -108,48 +109,3 @@ def galoisMul(a, b):
     mul ^= polynomeMul(base, mul >> 48 << 16)
     mul ^= polynomeMul(base, mul >> 32)
     return int(mul)
-
-# Пришлось сюда функцию воткнуть
-def break_key_into_blocks(key, block_size):
-    def get_block(n):
-        return n % 2 ** block_size
-
-    def rshift(n):
-        return n >> block_size
-
-    nbytes = KEY_SIZE // block_size
-
-    blocks_arr = []
-    for n in range(nbytes):
-        blocks_arr.append(get_block(key))
-        key = rshift(key)
-
-    blocks_arr.reverse()
-    return blocks_arr
-
-def key_expansion(key):
-    z=[]
-    h = [0x5A827999,
-         0x6ED9EBA1,
-         0x8F1BBCDC,
-         0xCA62C1D6,
-         0xF7DEF58A]
-    m5 = [[1, 0, 1, 0],
-          [1, 1, 0, 1],
-          [1, 1, 1, 0],
-          [0, 1, 0, 1]]
-    mb = [[0, 1, 0, 1],
-          [1, 0, 1, 0],
-          [1, 1, 0, 1],
-          [1, 0, 1, 1]]
-    m8 = [[1, 0, 1, 0],
-          [0, 1, 0, 1],
-          [0, 1, 1, 1],
-          [1, 0, 1, 1]]
-    ki = break_key_into_blocks(key, 32)
-    x = [break_key_into_blocks(ki[i], 8) for i in range(4)]
-    z[1] = ki[2]
-    z[3] = galoisMul(m5, x[1])
-    for i in range(4):
-        z[3][i] ^= h[0]
-    z[4] = galoisMul(mb, x[4])
