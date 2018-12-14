@@ -2,36 +2,40 @@ import random as rnd
 
 simple_fermat_nums = (3, 17, 257, 65537)
 
+
 # Обобщённый алгоритм Евклида
 # Возвращает НОД(a, b) и коэффициенты Безу
 def expanded_gcd(a, b):
     a0, a1 = a, b
     x0, x1 = 1, 0
     y0, y1 = 0, 1
-    
+
     while a1 != 0:
         q = a0 // a1
         a0, a1 = a1, a0 - q * a1
         x0, x1 = x1, x0 - q * x1
         y0, y1 = y1, y0 - q * y1
-        
+
     return (a0, x0, y0)
-	
+
+
 # Выполняет быстрое возведение в степень exp
 # числа base по модулю m
 def expmod(base, exp, m):
-	if exp == 0:
-		return 1
-	elif exp%2 == 0:
-		return (expmod(base, exp//2, m))**2 % m
-	else:
-		return (base * expmod(base, exp-1, m)) % m
-		
+    if exp == 0:
+        return 1
+    elif exp % 2 == 0:
+        return (expmod(base, exp // 2, m)) ** 2 % m
+    else:
+        return (base * expmod(base, exp - 1, m)) % m
+
+
 # Тест Ферма на простоту числа n		
 def fermat_test(n):
-	a = rnd.randint(2, n-1)
-	return expmod(a, n-1, n) == 1
-	
+    a = rnd.randint(2, n - 1)
+    return expmod(a, n - 1, n) == 1
+
+
 # Тест числа n на простоту
 # Выполняет тест Ферма для числа n max_test раз	
 def is_prime(n, max_test):
@@ -40,25 +44,28 @@ def is_prime(n, max_test):
             return False
     return True
 
+
 # Возвращает required самых больших простых чисел
 # из диапазона (2, max_num);
 # По умолчанию required=-1 значит, что возвращаются 
 # все простые числа из данного диапазона
 def find_primes(max_num, max_test, required=-1):
-	primes = []
-	for num in range(max_num, 2, -1):
-		if is_prime(num, max_test):
-			primes.append(num)
-		if required >= 0 and len(primes) >= required:
-			break
-	return primes
+    primes = []
+    for num in range(max_num, 2, -1):
+        if is_prime(num, max_test):
+            primes.append(num)
+        if required >= 0 and len(primes) >= required:
+            break
+    return primes
+
+
 # Генератор СЧ
 
 # Меняет местами значения в массиве
 # (просто чтобы несколько раз вручную не прописывать)
 
 def replace(s, i, j):
-	s[i], s[j] = s[j], s[i]
+    s[i], s[j] = s[j], s[i]
 
 
 # Генерация массива чисел
@@ -66,13 +73,13 @@ def replace(s, i, j):
 # в key передается изначальный ключ (массивом)
 
 def s_gen(key, key_size):
-	s = []
-	j = 0
-	s = [i for i in range(0, 256)]
-	for i in range(0, 255):
-		j = (j + s[i] + key[i % key_size]) % 256
-		replace(s, i, j)
-	return s
+    s = []
+    j = 0
+    s = [i for i in range(0, 256)]
+    for i in range(0, 255):
+        j = (j + s[i] + key[i % key_size]) % 256
+        replace(s, i, j)
+    return s
 
 
 # Генерация ключа
@@ -80,14 +87,69 @@ def s_gen(key, key_size):
 # через s_gen()
 
 def keygen(s):
-	i = 0
-	j = 0
-	x = 0
-	new_key = ''
-	while len(new_key) < 256:
-		i = (i + 1) % 256
-		j = (j + s[i]) % 256
-		replace(s, i, j)
-		temp = (s[i] + s[j]) % 256
-		new_key += str(s[temp])
-	return int(new_key)
+    i = 0
+    j = 0
+    x = 0
+    new_key = ''
+    while len(new_key) < 256:
+        i = (i + 1) % 256
+        j = (j + s[i]) % 256
+        replace(s, i, j)
+        temp = (s[i] + s[j]) % 256
+        new_key += str(s[temp])
+    return int(new_key)
+
+# умножение в поле 2^8
+def polynomeMul(a, b):
+    return (a*b) & 0x1111111111111111
+def galoisMul(a, b):
+    mul = polynomeMul(a, b)
+    base = 0x100011011
+    mul ^= polynomeMul(base, mul >> 48 << 16)
+    mul ^= polynomeMul(base, mul >> 32)
+    return int(mul)
+
+# Пришлось сюда функцию воткнуть
+def break_key_into_blocks(key, block_size):
+    def get_block(n):
+        return n % 2 ** block_size
+
+    def rshift(n):
+        return n >> block_size
+
+    nbytes = KEY_SIZE // block_size
+
+    blocks_arr = []
+    for n in range(nbytes):
+        blocks_arr.append(get_block(key))
+        key = rshift(key)
+
+    blocks_arr.reverse()
+    return blocks_arr
+
+def key_expansion(key):
+    z=[]
+    h = [0x5A827999,
+         0x6ED9EBA1,
+         0x8F1BBCDC,
+         0xCA62C1D6,
+         0xF7DEF58A]
+    m5 = [[1, 0, 1, 0],
+          [1, 1, 0, 1],
+          [1, 1, 1, 0],
+          [0, 1, 0, 1]]
+    mb = [[0, 1, 0, 1],
+          [1, 0, 1, 0],
+          [1, 1, 0, 1],
+          [1, 0, 1, 1]]
+    m8 = [[1, 0, 1, 0],
+          [0, 1, 0, 1],
+          [0, 1, 1, 1],
+          [1, 0, 1, 1]]
+    ki = break_key_into_blocks(key, 32)
+    x = [break_key_into_blocks(ki[i], 8) for i in range(4)]
+    z[1] = ki[2]
+    z[3] = galoisMul(m5, x[1])
+    for i in range(4):
+        z[3][i] ^= h[0]
+    z[4] = galoisMul(mb, x[4])

@@ -16,12 +16,12 @@ SBOX = (0x07, 0xFC, 0x55, 0x70, 0x98, 0x8E, 0x84, 0x4E, 0xBC, 0x75, 0xCE, 0x18, 
         0x50, 0xD2, 0x92, 0x74, 0x93, 0xE1, 0xDA, 0xAE, 0xA9, 0x53, 0xE4, 0x40, 0xCD, 0xBA, 0x97, 0xA3,
         0x91, 0x31, 0x25, 0x76, 0x36, 0x32, 0x28, 0x3A, 0x24, 0x4C, 0xDB, 0xD9, 0x8D, 0xDC, 0x62, 0x2A,
         0xEA, 0x15, 0xDD, 0xC2, 0xA5, 0x0C, 0x04, 0x1D, 0x8F, 0xCB, 0xB4, 0x4F, 0x16, 0xAB, 0xAA, 0xA0)
-        
+
 MDS = ((0xC4, 0x65, 0xC8, 0x8B),
-	   (0x8B, 0xC4, 0x65, 0xC8),
-	   (0xC8, 0x8B, 0xC4, 0x65),
-	   (0x65, 0xC8, 0x8B, 0xC4))
-	   
+       (0x8B, 0xC4, 0x65, 0xC8),
+       (0xC8, 0x8B, 0xC4, 0x65),
+       (0x65, 0xC8, 0x8B, 0xC4))
+
 MDSH = ((0x5, 0x7), (0xa, 0xb))
 
 KEY_SIZE = 128
@@ -29,12 +29,14 @@ BLOCK_SIZE = 64
 
 primitiveGF8 = 0x163
 
+
 def poly32_deg(a):
     n = -1
     while a != 0:
         n += 1
         a >>= 1
     return n
+
 
 def poly32_mul(a, b):
     c = 0
@@ -44,6 +46,7 @@ def poly32_mul(a, b):
         b >>= 1
         a <<= 1
     return c
+
 
 def poly32_mod(a, b):
     da = poly32_deg(a)
@@ -61,39 +64,43 @@ def poly32_mod(a, b):
         t >>= 1
         da -= 1
     return a
-    
-def break_into_bytes(key):
-    def right8(n):
-        return n % 2**8
-    def rshift8(n):
-        return n >> 8
-    
-    nbytes = KEY_SIZE // 8
-    
-    byte_arr = []
-    for n in range(nbytes):
-        byte_arr.append(right8(key))
-        key = rshift8(key)
-        
-    byte_arr.reverse()    
-    return byte_arr
 
-def break_into_blocks(data):
+
+def break_key_into_blocks(key, block_size):
+    def get_block(n):
+        return n % 2 ** block_size
+
+    def rshift(n):
+        return n >> block_size
+
+    nbytes = KEY_SIZE // block_size
+
+    blocks_arr = []
+    for n in range(nbytes):
+        blocks_arr.append(get_block(key))
+        key = rshift(key)
+
+    blocks_arr.reverse()
+    return blocks_arr
+
+
+def break_data_into_blocks(data):
     nitems = BLOCK_SIZE // 8
-    
+
     data_len = len(data)
     if data_len % nitems != 0:
         nrequired = nitems - data_len % nitems
         for n in range(nrequired):
             data.append(0)
         data_len += nrequired
-        
+
     blocks = []
     for n in range(0, data_len, 8):
-        blocks.append(data[n:n+8])
-        
+        blocks.append(key[n:n + 8])
+
     return blocks
-    
+
+
 def hcryptL1_xs(data):
     def hcryptL1_mdsl(data):
         out = []
@@ -105,36 +112,37 @@ def hcryptL1_xs(data):
         return out
 
     nitems = len(data)
-    
+
     # Генерация ключа
     key = random.getrandbits(KEY_SIZE)
     key_bytes = break_into_bytes(key)
     l_key_bytes = key_bytes[:8]
     r_key_bytes = key_bytes[8:]
-    
+
     # Наложение ключа l_key_bytes
     for i in range(nitems):
         data[i] ^= l_key_bytes[i]
-        
+
     # Табличная замена байтов
     for i in range(nitems):
         data[i] = SBOX[int(data[i])]
-    
+
     # Умножение на матрицу mds
     ldata = hcryptL1_mdsl(data[:4])
     rdata = hcryptL1_mdsl(data[4:])
     data = ldata + rdata
-    
+
     # Наложение ключа r_key_bytes
     for i in range(nitems):
         data[i] ^= r_key_bytes[i]
-        
+
     # Табличная замена байтов
     for i in range(nitems):
         data[i] = SBOX[int(data[i])]
-        
+
     return data
-    
+
+
 def mdsh_mul(data, x):
     out = [0 for i in range(4)]
     if x & 1 != 0:
@@ -159,24 +167,26 @@ def mdsh_mul(data, x):
         out[3] ^= data[2]
     return out
 
+
 def hcryptL1_mdsh(data):
-    out = [[0 for j in range(4)] for i in range(2)] 
+    out = [[0 for j in range(4)] for i in range(2)]
     for i in range(2):
         for j in range(2):
-            tmp = mdsh_mul(data[4 * j : 4 * (j + 1)], MDSH[i][j])
+            tmp = mdsh_mul(data[4 * j: 4 * (j + 1)], MDSH[i][j])
             for k in range(4):
                 out[i][k] ^= tmp[k]
     return out[0] + out[1]
-    
+
+
 def encrypt(data):
-	blocks = break_into_blocks(data)
-	for i in range(len(blocks)):
-		for r in range(5):
-			hcryptL1_xs(blocks[i])
-			hcryptL1_mdsh(blocks[i])
-		hcryptL1_xs(blocks[i])
-		
-	out = []	
-	for i in range(len(blocks)):
-		out += blocks[i]
-	return out    
+    blocks = break_into_blocks(data)
+    for i in range(len(blocks)):
+        for r in range(5):
+            hcryptL1_xs(blocks[i])
+            hcryptL1_mdsh(blocks[i])
+        hcryptL1_xs(blocks[i])
+
+    out = []
+    for i in range(len(blocks)):
+        out += blocks[i]
+    return out
