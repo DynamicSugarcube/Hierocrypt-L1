@@ -1,15 +1,16 @@
 ﻿import socket
 import argparse
+import random
 
 import libcrypt
 import connection as conn
 import hierocrypt_l1
 
-ENCODING = "ASCII"
-
 def main():
 	data = parse_arguments()
-	encrypted = hierocrypt_l1.encrypt(bytearray(data, encoding="ASCII"))
+	
+	keys = [random.getrandbits(hierocrypt_l1.KEY_SIZE) for i in range(6)]
+	encrypted = hierocrypt_l1.encrypt(bytearray(data, encoding = conn.ENCODING), keys)
 		
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((conn.HOST, conn.PORT))
