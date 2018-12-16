@@ -1,4 +1,5 @@
 ﻿import socket
+import pickle
 import argparse
 import random
 
@@ -25,7 +26,9 @@ def main():
 		
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((conn.HOST, conn.PORT))
-	sock.send(bytes(encrypted))
+	
+	package = pickle.dumps((encrypted, keys))
+	sock.send(package)
 
 	data = sock.recv(conn.NBYTES)
 	print(data.decode())
