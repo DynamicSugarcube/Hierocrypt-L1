@@ -237,7 +237,7 @@ def key_expansion(key, replacement_set):
           [0, 1, 0, 1],
           [0, 1, 1, 1],
           [1, 0, 1, 1]]
-    k = [[[0 for i in range(2)] for i in range(2)] for i in range(8)]  # Массив ключей шифрования i-го раунда,
+    k = [[[0 for i in range(2)] for i in range(2)] for i in range(7)]  # Массив ключей шифрования i-го раунда,
     # состоит из # 7 наборов 32-битных половинок
     def matrix_mul(data, mul_matrix):
         out = []
@@ -288,7 +288,7 @@ def key_expansion(key, replacement_set):
               [0, 1, 1, 0],
               [1, 0, 0, 1]]
         x = break_key_into_blocks(x, 32, 128)
-        for i in range(5, 8):
+        for i in range(4, 7):
             y[1] = x[0]
             x[0] ^= x[2]
             f = break_key_into_blocks(x[2], 8, 32)
