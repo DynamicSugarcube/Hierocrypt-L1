@@ -219,6 +219,7 @@ def encrypt(data, keys):
 
 def key_expansion(key, replacement_set):
     z = [[0, 0 , 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0]]
+    x = 0
     h = [0x5A827999,
          0x6ED9EBA1,
          0x8F1BBCDC,
@@ -303,8 +304,9 @@ def key_expansion(key, replacement_set):
             k[i][1][2] = y[0] ^ x[1] ^ t[0]
             k[i][2][1] = y[0] ^ x[1] ^ t[1]
             k[i][2][2] = y[1] ^ t[1]
+    x = first_step(key, 0)
+    second_step(x)
     return k
-
 
 
 def decrypt(data, keys):
