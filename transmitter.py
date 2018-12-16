@@ -7,7 +7,18 @@ import connection as conn
 import hierocrypt_l1
 
 def main():
-	data = parse_arguments()
+	args = parse_arguments()
+	
+	data = ''
+	if (args.message):
+		data += args.message
+	if (args.path):
+		f = open(args.path	, 'r')
+		data += f.read()
+		f.close()
+	if (data == ''):
+		print('Nothing to send')
+		return
 	
 	keys = [random.getrandbits(hierocrypt_l1.KEY_SIZE) for i in range(6)]
 	encrypted = hierocrypt_l1.encrypt(bytearray(data, encoding = conn.ENCODING), keys)
@@ -22,10 +33,11 @@ def main():
 	sock.close()
 	
 def parse_arguments():
-	parser=argparse.ArgumentParser()
-	parser.add_argument("message", type=str)
-	arg=parser.parse_args()
-	return(arg.message)
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-m', '--message', action = 'store')
+	parser.add_argument('-p', '--path', action = 'store')
+	args = parser.parse_args()
+	return args
 
 if __name__ == "__main__":
 	main()
