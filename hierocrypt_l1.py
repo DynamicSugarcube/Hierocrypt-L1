@@ -218,7 +218,7 @@ def encrypt(data, keys):
 
 
 def key_expansion(key, replacement_set):
-    z = [[0, 0 , 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0]]
+    z = [[0, 0, 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0]]
     x = 0
     h = [0x5A827999,
          0x6ED9EBA1,
@@ -237,7 +237,7 @@ def key_expansion(key, replacement_set):
           [0, 1, 0, 1],
           [0, 1, 1, 1],
           [1, 0, 1, 1]]
-    k = [[[0 for i in range(2)] for i in range(2)] for i in range(7)]  # Массив ключей шифрования i-го раунда,
+    k = [[[0 for i in range(2)] for i in range(2)] for i in range(8)]  # Массив ключей шифрования i-го раунда,
     # состоит из # 7 наборов 32-битных половинок
     def matrix_mul(data, mul_matrix):
         out = []
@@ -252,29 +252,30 @@ def key_expansion(key, replacement_set):
         ki = break_key_into_blocks(key, 32, 128)
         x = [break_key_into_blocks(ki[i], 8, 32) for i in range(4)]  # Вспомогательная переменная
         z[0] = ki[1]
-        z[0] = break_key_into_blocks(z[0], 8)
+        z[0] = break_key_into_blocks(z[0], 8, 32)
         z[2] = matrix_mul(x[2], m5)
         for i in range(4):
             z[2][i] ^= h[j]
         z[3] = matrix_mul(x[3], mb)
-        ki[1] ^= z[2]
-        f = break_key_into_blocks(ki[2], 8)
+        for i in range(4):
+            ki[1] ^= z[2][i]
+        f = break_key_into_blocks(ki[2], 8, 32)
         for i in range(4):
             f[i] = replacement_set[f[i]]
         f = matrix_mul(f, m8)
         for i in range(4):
-            z[1][i] = ki[0][i] ^ f[i]
+            z[1][i] = ki[0] ^ f[i]
         for i in range(4):
             for j in range(4):
                 line += str(z[i][j])
         result = int(line)
-        if j>1:
-            ki = break_key_into_blocks(key, 8, 128)
+        if j > 1:
+            ki = break_key_into_blocks(key, 32, 128)
             for i in range(4):
-                k[i][1][1] = z[1][i]
-                k[i][1][2] = z[1][i] ^ ki[1][i] ^ z[2][i]
-                k[i][2][1] = z[1][i] ^ ki[0][i] ^ z[3][i]
-                k[i][2][2] = z[0] ^ z[3]
+                k[i][0][0] = z[1][i]
+                #k[i][0][1] = z[1][i] ^ ki[1] ^ z[2][i]
+                k[i][1][0] = z[1][i] ^ ki[0] ^ z[3][i]
+                k[i][1][0] ^= z[0][j] ^ z[3][j]
         return result
     def second_step(first_step_result):
         x = first_step_result
@@ -286,24 +287,28 @@ def key_expansion(key, replacement_set):
               [1, 1, 0, 1],
               [0, 1, 1, 0],
               [1, 0, 0, 1]]
+        x = break_key_into_blocks(x, 32, 128)
         for i in range(5, 8):
-            x = break_key_into_blocks(x, 32, 128)
             y[1] = x[0]
             x[0] ^= x[2]
             f = break_key_into_blocks(x[2], 8, 32)
-            for i in range(4):
-                f[i] = replacement_set[f[i]]
+
+            for i1 in range(4):
+                f[i1] = replacement_set[f[i1]]
             f = matrix_mul(f, m8)
-            y[0] = x[1] ^ f
-            x[2] ^= h[9-i]
-            t[0] = matrix_mul(x[2], mb)
-            t[1] = matrix_mul(x[3], m5)
+            for i2 in range(4):
+                y[0] = x[1] ^ f[i2]
+            x[2] ^= h[8-i]
+            t[0] = matrix_mul(x, mb)
+            t[1] = matrix_mul(x, m5)
             y[2] = matrix_mul(t[0], m8)
             y[3] = matrix_mul(t[1], m8)
-            k[i][1][1] = y[0] ^ x[2]
-            k[i][1][2] = y[0] ^ x[1] ^ t[0]
-            k[i][2][1] = y[0] ^ x[1] ^ t[1]
-            k[i][2][2] = y[1] ^ t[1]
+            for j in range(4):
+                k[i][0][0] = y[0] ^ x[2]
+                for q in range(4):
+                    k[i][0][1] ^= y[0] ^ x[1] ^ t[0][q]
+                    k[i][1][0] ^= y[0] ^ x[1] ^ t[1][q]
+                    k[i][1][1] ^= y[1] ^ t[1][q]
     x = first_step(key, 0)
     second_step(x)
     return k
