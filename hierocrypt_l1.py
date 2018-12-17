@@ -1,6 +1,7 @@
 import random
-import libcrypt as lbcr
+import libcrypt as lc
 
+# Таблица замены при шифровании
 SBOX = (0x07, 0xFC, 0x55, 0x70, 0x98, 0x8E, 0x84, 0x4E, 0xBC, 0x75, 0xCE, 0x18, 0x02, 0xE9, 0x5D, 0x80,
         0x1C, 0x60, 0x78, 0x42, 0x9D, 0x2E, 0xF5, 0xE8, 0xC6, 0x7A, 0x2F, 0xA4, 0xB2, 0x5F, 0x19, 0x87,
         0x0B, 0x9B, 0x9C, 0xD3, 0xC3, 0x77, 0x3D, 0x6F, 0xB9, 0x2D, 0x4D, 0xF7, 0x8C, 0xA7, 0xAC, 0x17,
@@ -18,84 +19,38 @@ SBOX = (0x07, 0xFC, 0x55, 0x70, 0x98, 0x8E, 0x84, 0x4E, 0xBC, 0x75, 0xCE, 0x18, 
         0x91, 0x31, 0x25, 0x76, 0x36, 0x32, 0x28, 0x3A, 0x24, 0x4C, 0xDB, 0xD9, 0x8D, 0xDC, 0x62, 0x2A,
         0xEA, 0x15, 0xDD, 0xC2, 0xA5, 0x0C, 0x04, 0x1D, 0x8F, 0xCB, 0xB4, 0x4F, 0x16, 0xAB, 0xAA, 0xA0)
 
-ISBOX = (0xB8, 0x49, 0x0C, 0x69, 0xF6, 0xBF, 0x80, 0x00, 0x5B, 0x55, 0x8F, 0x20, 0xF5, 0x45, 0xA4, 0x5F,
-         0xC3, 0x44, 0x74, 0x65, 0xCB, 0xF1, 0xFC, 0x2F, 0x0B, 0x1E, 0x62, 0x84, 0x10, 0xF7, 0x4F, 0x7F,
-         0x96, 0x40, 0x98, 0x75, 0xE8, 0xE2, 0xB6, 0x37, 0xE6, 0x34, 0xEF, 0xB7, 0x90, 0x29, 0x15, 0x1A,
-         0x39, 0xE1, 0xE5, 0x9B, 0x82, 0xCE, 0xE4, 0x50, 0xAC, 0x79, 0xE7, 0x7B, 0x30, 0x26, 0x3D, 0x8E,
-         0xDB, 0x32, 0x13, 0x99, 0x42, 0xCF, 0xC8, 0xA2, 0x46, 0xB0, 0x8A, 0x86, 0xE9, 0x2A, 0x07, 0xFB,
-         0xD0, 0x5E, 0xA0, 0xD9, 0xB5, 0x02, 0x63, 0x4A, 0x8D, 0xA8, 0x31, 0xAF, 0xAD, 0x0E, 0x6A, 0x1D,
-         0x11, 0x60, 0xEE, 0xA3, 0xA9, 0x77, 0x87, 0x67, 0xC1, 0x38, 0x48, 0x94, 0xCA, 0xA5, 0xCC, 0x27,
-         0x03, 0x9E, 0x3A, 0x91, 0xD3, 0x09, 0xE3, 0x25, 0x12, 0x85, 0x19, 0xBE, 0x54, 0x7A, 0x9F, 0x61,
-         0x0F, 0x59, 0x5A, 0x71, 0x06, 0x4D, 0xB9, 0x1F, 0x89, 0xA1, 0xC9, 0x41, 0x2C, 0xEC, 0x05, 0xF8,
-         0xBA, 0xE0, 0xD2, 0xD4, 0x58, 0x3C, 0x64, 0xDE, 0x04, 0x68, 0x53, 0x21, 0x22, 0x14, 0x6E, 0x51,
-         0xFF, 0xC2, 0x73, 0xDF, 0x1B, 0xF4, 0xBD, 0x2D, 0x3B, 0xD8, 0xFE, 0xFD, 0x2E, 0xC0, 0xD7, 0x7E,
-         0x7D, 0x57, 0x1C, 0x9A, 0xFA, 0x52, 0x6B, 0x76, 0x97, 0x28, 0xDD, 0xB4, 0x08, 0x4C, 0xA7, 0x88,
-         0x5D, 0x66, 0xF3, 0x24, 0x8B, 0x83, 0x18, 0xC5, 0x81, 0x33, 0x6C, 0xF9, 0x72, 0xDC, 0x0A, 0xCD,
-         0x78, 0x92, 0xD1, 0x23, 0xB1, 0x7C, 0x70, 0x43, 0x3F, 0xEB, 0xD6, 0xEA, 0xED, 0xF2, 0x36, 0x6F,
-         0xB2, 0xD5, 0xC6, 0xA6, 0xDA, 0x4B, 0x95, 0x9C, 0x17, 0x0D, 0xF0, 0xC4, 0x4E, 0x35, 0xAA, 0x8C,
-         0x9D, 0x56, 0xC7, 0xB3, 0xAE, 0x16, 0xAB, 0x2B, 0x93, 0x3E, 0x6D, 0x5C, 0x01, 0x47, 0xBC, 0xBB)
-
+# Константные матрицы, используемые при шифровании
 MDS = ((0xC4, 0x65, 0xC8, 0x8B),
        (0x8B, 0xC4, 0x65, 0xC8),
        (0xC8, 0x8B, 0xC4, 0x65),
        (0x65, 0xC8, 0x8B, 0xC4))
 
-MDS_INV = ((0x82, 0xc4, 0x34, 0xf6),
-           (0xf6, 0x82, 0xc4, 0x34),
-           (0x34, 0xf6, 0x82, 0xc4),
-           (0xc4, 0x34, 0xf6, 0x82))
+MDSH = ((1, 0, 1, 0, 1, 1, 1, 0),
+		(1, 1, 0, 1, 1, 1, 1, 1),
+		(1, 1, 1, 0, 0, 1, 1, 1),
+		(0, 1, 0, 1, 1, 1, 0, 1),
+		(1, 1, 0, 1, 0, 1, 0, 1),
+		(1, 1, 1, 0, 1, 0, 1, 0),
+		(1, 1, 1, 1, 1, 1, 0, 1),
+		(1, 0, 1, 0, 1, 0, 1, 1))
+			
+# Константные матрицы, используемые при расширении ключа			
+HCONSTS = (0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6, 0xF7DEF58A)
 
-MDSH = ((0x5, 0x7), (0xa, 0xb))
+M5 = ((1, 0, 1, 0), (1, 1, 0, 1),
+	  (1, 1, 1, 0), (0, 1, 0, 1))
 
-MDSH_INV = ((0xc, 0xa), (0x5, 0xb))
+MB = ((0, 1, 0, 1), (1, 0, 1, 0),
+	  (1, 1, 0, 1), (1, 0, 1, 1))
+
+M8 = ((1, 0, 1, 0), (0, 1, 0, 1),
+	  (0, 1, 1, 1), (1, 0, 1, 1))
 
 KEY_SIZE = 128
 BLOCK_SIZE = 64
 
-primitiveGF8 = 0x163
-
-
-def poly32_deg(a):
-    n = -1
-    while a != 0:
-        n += 1
-        a >>= 1
-    return n
-
-
-def gmul(a, b):
-    p = 0
-    while a & b:
-        if b & 1:
-            p ^= a
-        if a & 0x80:
-            a = (a << 1) ^ 0x11b
-        else:
-            a <<= 1
-        b >>= 1
-    return p
-
-
-def poly32_mod(a, b):
-    da = poly32_deg(a)
-    db = poly32_deg(b)
-    if (da < db):
-        return a
-    if (da == db):
-        return a ^ b
-    b <<= da - db
-    t = 1 << da
-    while da >= db:
-        if (a & t):
-            a ^= b
-        b >>= 1
-        t >>= 1
-        da -= 1
-    return a
-
-
 def break_key_into_blocks(key, block_size, key_size):
-    def get_block(n):
+    def get_right_block(n):
         return n % 2 ** block_size
 
     def rshift(n):
@@ -105,7 +60,7 @@ def break_key_into_blocks(key, block_size, key_size):
 
     blocks = []
     for n in range(nbytes):
-        blocks.append(get_block(key))
+        blocks.append(get_right_block(key))
         key = rshift(key)
 
     blocks.reverse()
@@ -113,216 +68,140 @@ def break_key_into_blocks(key, block_size, key_size):
 
 
 def break_data_into_blocks(data):
-    nitems = BLOCK_SIZE // 8
+	items_per_block = BLOCK_SIZE // 8
 
-    data_len = len(data)
-    if data_len % nitems != 0:
-        nrequired = nitems - data_len % nitems
-        for n in range(nrequired):
-            data.append(0)
-        data_len += nrequired
+	data_len = len(data)
+	if data_len % items_per_block != 0:
+		nrequired = items_per_block - data_len % items_per_block
+		for n in range(nrequired):
+			data.append(0)
+		data_len += nrequired
 
-    blocks = []
-    for n in range(0, data_len, 8):
-        blocks.append(data[n:n + 8])
+	blocks = []
+	for n in range(0, data_len, 8):
+		blocks.append(data[n:n + 8])
 
-    return blocks
+	return blocks
+    
+def glue_bytes(byte_arr):
+    res = 0
+    byte_arr.reverse()
+    for i in range(len(byte_arr)):
+        res += byte_arr[i] * 2**(8 * i)
+    return res
 
-
-def hcryptL1_xs(data, key, replacement_set, mul_matrix):
-    def matrix_mul(data, mul_matrix):
+def matrix_mul(data, mul_matrix):
         out = []
-        for i in range(4):
+        n = len(mul_matrix)
+        for i in range(n):
             m = 0
-            for j in range(4):
-                m ^= poly32_mod(gmul(mul_matrix[i][j], data[j]), primitiveGF8)
+            for j in range(n):
+                m ^= lc.poly_mod(lc.poly_mul(mul_matrix[i][j], data[j]), lc.PRIMITIVE_GF8)
             out.append(m)
         return out
+        
+def key_expansion(key):
+    def P5(x):
+        blocks = break_key_into_blocks(x, 8, 32)
+        blocks = matrix_mul(blocks, M5)
+        return glue_bytes(blocks)
 
-    nitems = len(data)
+    def PB(x):
+        blocks = break_key_into_blocks(x, 8, 32)
+        blocks = matrix_mul(blocks, M8)
+        return glue_bytes(blocks)
 
-    key_bytes = break_key_into_blocks(key, 8, 128)
-    l_key_bytes = key_bytes[:8]
-    r_key_bytes = key_bytes[8:]
+    def F(x):
+        blocks = break_key_into_blocks(x, 8, 32)
+        blocks = [SBOX[blocks[i]] for i in range(len(blocks))]
+        blocks = matrix_mul(blocks, M8)
+        return glue_bytes(blocks)
 
-    # Наложение ключа l_key_bytes
-    for i in range(nitems):
-        data[i] ^= l_key_bytes[i]
+    def P16(x):
+        t1 = matrix_mul(x, MB)
+        t2 = matrix_mul(x, M5)
+        return glue_bytes(t1), glue_bytes(t2)
 
-    # Табличная замена байтов
-    for i in range(nitems):
-        data[i] = replacement_set[int(data[i])]
+    # Генерация промежуточного ключа
+    key_blocks = break_key_into_blocks(key, 32, KEY_SIZE)
+    z3 = P5(key_blocks[2]) ^ HCONSTS[0]
+    z4 = PB(key_blocks[3])
+    z1 = key_blocks[1]
+    z2 = key_blocks[0] ^ F(key_blocks[1] ^ z3)
+    
+    # Вычисление расширенных ключей
+    out_keys = [0 for i in range(7)]
 
-    # Умножение на матрицу MDS
-    ldata = matrix_mul(data[:4], mul_matrix)
-    rdata = matrix_mul(data[4:], mul_matrix)
-    data = ldata + rdata
+    x1, x2, x3, x4 = z1, z2, z3, z4
+    for i in range(4):
+        y3 = P5(x3) ^ HCONSTS[i + 1]
+        y4 = PB(x4)
+        y1 = x2
+        y2 = x1 ^ F(x2 ^ z3)
 
-    # Наложение ключа r_key_bytes
-    for i in range(nitems):
-        data[i] ^= r_key_bytes[i]
+        k11 = y2
+        k12 = y2 ^ x1 ^ y3
+        k21 = y2 ^ x1 ^ y4
+        k22 = y1 ^ y4
 
-    # Табличная замена байтов
-    for i in range(nitems):
-        data[i] = replacement_set[int(data[i])]
+        out_keys[i] = glue_bytes([k11, k21, k21, k22])
 
-    return data
+        x1, x2, x3, x4 = y1, y2, y3, y4
 
+    for i in range(4, 7):
+        out_keys[i] = out_keys[6 - i]
 
-def hcryptL1_mdsh(data, mul_matrix):
-    def mul(data, x):
-        out = [0 for i in range(4)]
-        if x & 1 != 0:
-            out[0] ^= data[0]
-            out[1] ^= data[1]
-            out[2] ^= data[2]
-            out[3] ^= data[3]
-        if x & 2 != 0:
-            out[0] ^= data[1]
-            out[1] ^= data[2]
-            out[2] ^= data[3] ^ data[0]
-            out[3] ^= data[0]
-        if x & 4 != 0:
-            out[0] ^= data[2]
-            out[1] ^= data[3] ^ data[0]
-            out[2] ^= data[0] ^ data[1]
-            out[3] ^= data[1]
-        if x & 8 != 0:
-            out[0] ^= data[3] ^ data[0]
-            out[1] ^= data[0] ^ data[1]
-            out[2] ^= data[1] ^ data[2]
-            out[3] ^= data[2]
-        return out
+    return out_keys
+    	
+def encrypt(data, key):
+	def XS(block, round_key):
+		nitems = len(block)
 
-    out = [[0 for j in range(4)] for i in range(2)]
-    for i in range(2):
-        for j in range(2):
-            tmp = mul(data[4 * j: 4 * (j + 1)], mul_matrix[i][j])
-            for k in range(4):
-                out[i][k] ^= tmp[k]
-    return out[0] + out[1]
+		key_bytes = break_key_into_blocks(round_key, 8, KEY_SIZE)
+		l_key_bytes = key_bytes[:8]
+		r_key_bytes = key_bytes[8:]
 
+		for i in range(nitems):
+			block[i] ^= l_key_bytes[i]
 
-def encrypt(data, keys):
-    blocks = break_data_into_blocks(data)
-    for i in range(len(blocks)):
-        for r in range(5):
-            blocks[i] = hcryptL1_xs(blocks[i], keys[r], SBOX, MDS)
-            blocks[i] = hcryptL1_mdsh(blocks[i], MDSH)
-        blocks[i] = hcryptL1_xs(blocks[i], keys[-1], SBOX, MDS)
+		for i in range(nitems):
+			block[i] = SBOX[int(block[i])]
 
-    out = []
-    for i in range(len(blocks)):
-        out += blocks[i]
-    return out
+		lblock = matrix_mul(block[:4], MDS)
+		rblock = matrix_mul(block[4:], MDS)
+		block = lblock + rblock
 
+		for i in range(nitems):
+			block[i] ^= r_key_bytes[i]
+			
+		for i in range(nitems):
+			block[i] = SBOX[int(block[i])]
 
-def key_expansion(key, replacement_set):
-    z = [[0, 0, 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0], [0, 0 , 0, 0]]
-    x = 0
-    h = [0x5A827999,
-         0x6ED9EBA1,
-         0x8F1BBCDC,
-         0xCA62C1D6,
-         0xF7DEF58A]
-    m5 = [[1, 0, 1, 0],
-          [1, 1, 0, 1],
-          [1, 1, 1, 0],
-          [0, 1, 0, 1]]
-    mb = [[0, 1, 0, 1],
-          [1, 0, 1, 0],
-          [1, 1, 0, 1],
-          [1, 0, 1, 1]]
-    m8 = [[1, 0, 1, 0],
-          [0, 1, 0, 1],
-          [0, 1, 1, 1],
-          [1, 0, 1, 1]]
-    k = [[[0 for i in range(2)] for i in range(2)] for i in range(7)]  # Массив ключей шифрования i-го раунда,
-    # состоит из # 7 наборов 32-битных половинок
-    def matrix_mul(data, mul_matrix):
-        out = []
-        for i in range(4):
-            m = 0
-            for j in range(4):
-                m ^= poly32_mod(gmul(mul_matrix[i][j], data[j]), primitiveGF8)
-            out.append(m)
-        return out
-    def first_step(key, j):
-        line = ''
-        ki = break_key_into_blocks(key, 32, 128)
-        x = [break_key_into_blocks(ki[i], 8, 32) for i in range(4)]  # Вспомогательная переменная
-        z[0] = ki[1]
-        z[0] = break_key_into_blocks(z[0], 8, 32)
-        z[2] = matrix_mul(x[2], m5)
-        for i in range(4):
-            z[2][i] ^= h[j]
-        z[3] = matrix_mul(x[3], mb)
-        for i in range(4):
-            ki[1] ^= z[2][i]
-        f = break_key_into_blocks(ki[2], 8, 32)
-        for i in range(4):
-            f[i] = replacement_set[f[i]]
-        f = matrix_mul(f, m8)
-        for i in range(4):
-            z[1][i] = ki[0] ^ f[i]
-        for i in range(4):
-            for j in range(4):
-                line += str(z[i][j])
-        result = int(line)
-        if j > 1:
-            ki = break_key_into_blocks(key, 32, 128)
-            for i in range(4):
-                k[i][0][0] = z[1][i]
-                #k[i][0][1] = z[1][i] ^ ki[1] ^ z[2][i]
-                k[i][1][0] = z[1][i] ^ ki[0] ^ z[3][i]
-                k[i][1][0] ^= z[0][j] ^ z[3][j]
-        return result
-    def second_step(first_step_result):
-        x = first_step_result
-        y = [0, 0, 0, 0]
-        t = [0, 0]
-        for i in range(4):
-            x = first_step(x, i)
-        m8 = [[1, 1, 1, 0],
-              [1, 1, 0, 1],
-              [0, 1, 1, 0],
-              [1, 0, 0, 1]]
-        x = break_key_into_blocks(x, 32, 128)
-        for i in range(4, 7):
-            y[1] = x[0]
-            x[0] ^= x[2]
-            f = break_key_into_blocks(x[2], 8, 32)
+		return block
+	
+	def PH(block):
+		return matrix_mul(block, MDSH)
+		
+	def final_key(block, key):
+		nitems = len(block)
+		
+		key_bytes = break_key_into_blocks(key, 8, KEY_SIZE)[:8]
+		for i in range(nitems):
+			block[i] ^= key_bytes[i]
+			
+		return block
 
-            for i1 in range(4):
-                f[i1] = replacement_set[f[i1]]
-            f = matrix_mul(f, m8)
-            for i2 in range(4):
-                y[0] = x[1] ^ f[i2]
-            x[2] ^= h[8-i]
-            t[0] = matrix_mul(x, mb)
-            t[1] = matrix_mul(x, m5)
-            y[2] = matrix_mul(t[0], m8)
-            y[3] = matrix_mul(t[1], m8)
-            for j in range(4):
-                k[i][0][0] = y[0] ^ x[2]
-                for q in range(4):
-                    k[i][0][1] ^= y[0] ^ x[1] ^ t[0][q]
-                    k[i][1][0] ^= y[0] ^ x[1] ^ t[1][q]
-                    k[i][1][1] ^= y[1] ^ t[1][q]
-    x = first_step(key, 0)
-    second_step(x)
-    return k
-
-
-def decrypt(data, keys):
-    blocks = break_data_into_blocks(data)
-    for i in range(len(blocks)):
-        for r in range(5):
-            blocks[i] = hcryptL1_xs(blocks[i], keys[r], ISBOX, MDS_INV)
-            blocks[i] = hcryptL1_mdsh(blocks[i], MDSH_INV)
-        blocks[i] = hcryptL1_xs(blocks[i], keys[-1], ISBOX, MDS)
-
-    out = []
-    for i in range(len(blocks)):
-        out += blocks[i]
-    return out
+	round_keys = key_expansion(key)
+	
+	blocks = break_data_into_blocks(data)
+	for i in range(len(blocks)):
+		for r in range(5):
+			blocks[i] = XS(blocks[i], round_keys[r])
+			blocks[i] = PH(blocks[i])
+		blocks[i] = XS(blocks[i], round_keys[-2])
+		blocks[i] = final_key(blocks[i], round_keys[-1])
+		
+	out = []
+	for i in range(len(blocks)):
+		out += blocks[i]
+	return out

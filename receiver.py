@@ -12,16 +12,15 @@ def main():
 
 	while True:
 		client_connection, client_address = sock.accept()
-		print("Connected client: " + str(client_address))
+		print("Connected client:", client_address)
 		
 		received_data = client_connection.recv(conn.NBYTES)
 		client_data = pickle.loads(received_data)
-		data = client_data[0]
-		keys = client_data[1]
-		decrypted = hierocrypt_l1.decrypt(data, keys)
 		
-		print("Received data:\n")
-		print(decrypted)
+		f = open(conn.DUMP, 'w')
+		pickle.dump(client_data, f)
+		f.close
+		print("Received data has been dumped.")
 		
 		client_connection.close()
 		

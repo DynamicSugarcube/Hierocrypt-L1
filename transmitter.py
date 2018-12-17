@@ -14,24 +14,23 @@ def main():
 	if (args.message):
 		data += args.message
 	if (args.path):
-		f = open(args.path	, 'r')
+		f = open(args.path, 'r')
 		data += f.read()
 		f.close()
 	if (data == ''):
 		print('Nothing to send')
 		return
 	
-	keys = [random.getrandbits(hierocrypt_l1.KEY_SIZE) for i in range(6)]
-	encrypted = hierocrypt_l1.encrypt(bytearray(data, encoding = conn.ENCODING), keys)
+	key = libcrypt.random_generator(1024)
+	prime_key = libcrypt.find_primes(key, max_test=100, nrequired=1)[0]
+	
+	encrypted = hierocrypt_l1.encrypt(bytearray(data, encoding = conn.ENCODING), prime_key)
 		
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((conn.HOST, conn.PORT))
 	
-	package = pickle.dumps((encrypted, keys))
+	package = pickle.dumps(encrypted)
 	sock.send(package)
-
-	data = sock.recv(conn.NBYTES)
-	print(data.decode())
 
 	sock.close()
 	
