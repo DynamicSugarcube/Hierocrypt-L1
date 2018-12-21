@@ -17,7 +17,7 @@ def main():
 		received_data = client_connection.recv(conn.NBYTES)
 		client_data = pickle.loads(received_data)
 		
-		f = open(conn.DUMP, 'w')
+		f = open(conn.DUMP, 'wb')
 		pickle.dump(client_data, f)
 		f.close
 		print("Received data has been dumped.")
